@@ -1,0 +1,58 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.16'
+    id 'com.diffplug.spotless' version '7.2.1'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+repositories { mavenCentral() }
+
+spotless {
+    java {
+        target 'src/**/*.java'
+        googleJavaFormat('1.28.0')
+        removeUnusedImports()
+    }
+}
+
+dependencies {
+    implementation platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.flywaydb:flyway-core'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    annotationProcessor 'org.projectlombok:lombok'
+    runtimeOnly 'org.flywaydb:flyway-database-postgresql'
+    runtimeOnly 'org.postgresql:postgresql'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    testAnnotationProcessor 'org.projectlombok:lombok'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test { useJUnitPlatform { excludeTags 'postgres' } }
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs concurrency and error-response tests against PostgreSQL 17 in Testcontainers.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'postgres'
+    }
+    shouldRunAfter test
+}
+
+tasks.named('check') { dependsOn integrationTest }
